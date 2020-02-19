@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-set
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: http
+  clusterIP: None
+  selector:
+    app: nginx
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: http
+spec:
+  serviceName: "nginx-set"
+  replicas: 2
+  selector: 
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: gcr.io/google_containers/nginx-slim:0.8
+        ports:
+        - containerPort: 80
+          name: http

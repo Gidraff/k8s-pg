@@ -1,0 +1,99 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ingress-updater
+rules:
+  - apiGroups: [""]
+    resources:
+    - services
+    - endpoints
+    verbs:
+    - get
+    - list
+    - watch
+    - update
+  - apiGroups:
+    - ""
+    resources:
+    - secrets
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    verbs:
+    - get
+    - list
+    - watch
+    - update
+    - create
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - events
+    verbs:
+    - create
+    - patch
+  - apiGroups:
+    - "extensions"
+    - "networking.k8s.io"
+    resources:
+    - ingresses
+    verbs:
+    - get
+    - list
+    - watch
+    - update
+  - apiGroups:
+    - "extensions"
+    - "networking.k8s.io"
+    resources:
+    - ingresses/status
+    verbs:
+    - update
+  - apiGroups:
+    - ""
+    resources:
+    - nodes
+    - nodes/proxy
+    - nodes/stats
+    - nodes/log
+    - nodes/spec
+    verbs:
+    - list
+    - get
+    - watch
+    - update
+  - apiGroups:
+    - k8s.nginx.org
+    resources:
+    - virtualservers
+    - virtualserverroutes
+    verbs:
+    - list
+    - watch
+    - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ingress-updater # updates Endpoints
+subjects:
+- kind: ServiceAccount
+  name: ingress-sa
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ingress-updater

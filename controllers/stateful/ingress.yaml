@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: test-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  # tls:
+  #   - hosts:
+  #     secretName: example-secret
+  rules:
+  - host: appscode.example.com
+    http: 
+      paths:
+      - path: /testPath(/|$)(.*)
+        backend:
+          serviceName: nginx-set
+          servicePort: 80

@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neo4j
+  labels:
+    app: neo4j-db
+    type: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neo4j-db
+      type: database
+  template:
+    metadata:
+      labels:
+        app: neo4j-db
+        type: database
+    spec:
+      containers:
+      - name: neo4j
+        imagePullPolicy: IfNotPresent
+        image: neo4j:4.0
+        ports:
+          - containerPort: 7474
+          - containerPort: 7687
+            protocol: TCP
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: neo4j-svc
+  labels:
+    app: neo4j-db
+    type: database
+spec:
+  selector:
+    app: neo4j-db
+    type: database
+  ports:
+    - port: 7687
+      targetPort: 7687
+      name: bolt
+    - port: 7474
+      targetPort: 7474
+      name: client
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: neo4j-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: example.neo4j.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: neo4j-svc
+              servicePort: 7474
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: tcp-services
+data:
+  7687: "default/neo4j-svc:7687"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-ingress-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ingress-nginx
+  template:
+    metadata:
+      labels:
+        app: ingress-nginx
+    spec:
+      containers:
+      - name: nginx-ingress-controller
+        image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.29.0
+        args:
+          - /nginx-ingress-controller
+          - --tcp-services-configmap=${POD_NAMESPACE}/tcp-services
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name

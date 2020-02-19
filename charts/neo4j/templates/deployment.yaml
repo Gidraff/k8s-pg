@@ -1,44 +1,47 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "nginx.fullname" . }}
+  name: {{ include "neo4j.fullname" . }}
   labels:
-    {{- include "nginx.labels" . | nindent 4 }}
+    {{- include "neo4j.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "nginx.selectorLabels" . | nindent 6 }}
+      {{- include "neo4j.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "nginx.selectorLabels" . | nindent 8 }}
+        {{- include "neo4j.selectorLabels" . | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      serviceAccountName: {{ include "nginx.serviceAccountName" . }}
+      serviceAccountName: {{ include "neo4j.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          image: {{ .Values.image.repository }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: http
-              containerPort: 80
+            - name: client
+              containerPort: 7474
+              protocol: TCP
+            - name: bolt
+              containerPort: 7687
               protocol: TCP
           livenessProbe:
             httpGet:
               path: /
-              port: http
+              port: client
           readinessProbe:
             httpGet:
               path: /
-              port: http
+              port: client
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
